@@ -14,13 +14,13 @@ def setup_package():
 
     try:
         os.environ["__IN-SETUP"] = "1"  # ensures only version is imported
-        from upsetplot import __version__ as version
+        from upsetheatmap import __version__ as version
 
         # See also setup.cfg
         setup(
-            name="UpSetPlot",
+            name="UpSetHeatmap",
             version=version,
-            packages=["upsetplot"],
+            packages=["upsetheatmap"],
             license="BSD-3-Clause",
             extras_require={"testing": ["pytest>=2.7", "pytest-cov<2.6"]},
             # TODO: check versions

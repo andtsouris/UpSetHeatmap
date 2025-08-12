@@ -12,8 +12,8 @@ from matplotlib.text import Text
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from upsetplot import UpSet, generate_counts, generate_samples, plot
-from upsetplot.plotting import _process_data
+from upsetheatmap import UpSet, generate_counts, generate_samples, plot
+from upsetheatmap.plotting import _process_data
 
 # TODO: warnings should raise errors
 

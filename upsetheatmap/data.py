@@ -126,7 +126,7 @@ def from_indicators(indicators, data=None):
     Examples
     --------
     >>> import pandas as pd
-    >>> from upsetplot import from_indicators
+    >>> from upsetheatmap import from_indicators
     >>>
     >>> # Just indicators:
     >>> indicators = {"cat1": [True, False, True, False],
@@ -265,7 +265,7 @@ def from_memberships(memberships, data=None):
 
     Examples
     --------
-    >>> from upsetplot import from_memberships
+    >>> from upsetheatmap import from_memberships
     >>> from_memberships([
     ...     ['cat1', 'cat3'],
     ...     ['cat2', 'cat3'],
@@ -345,7 +345,7 @@ def from_contents(contents, data=None, id_column="id"):
 
     Examples
     --------
-    >>> from upsetplot import from_contents
+    >>> from upsetheatmap import from_contents
     >>> contents = {'cat1': ['a', 'b', 'c'],
     ...             'cat2': ['b', 'd'],
     ...             'cat3': ['e']}

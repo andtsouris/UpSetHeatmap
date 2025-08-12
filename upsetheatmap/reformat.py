@@ -316,7 +316,7 @@ def query(
 
     Examples
     --------
-    >>> from upsetplot import query, generate_samples
+    >>> from upsetheatmap import query, generate_samples
     >>> data = generate_samples(n_samples=20)
     >>> result = query(data, present="cat1", max_subset_size=4)
     >>> result.category_totals

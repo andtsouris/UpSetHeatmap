@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from upsetplot import from_contents, from_indicators, from_memberships, generate_data
+from upsetheatmap import from_contents, from_indicators, from_memberships, generate_data
 
 
 @pytest.mark.parametrize("typ", [set, list, tuple, iter])
