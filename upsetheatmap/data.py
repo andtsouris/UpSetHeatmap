@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_samples(seed=0, n_samples=10000, n_categories=3):
+def generate_samples(seed=0, n_samples=10000, n_categories=3, n_groups=5):
     """Generate artificial samples assigned to set intersections
 
     Parameters
@@ -16,11 +16,14 @@ def generate_samples(seed=0, n_samples=10000, n_categories=3):
         Number of samples to generate
     n_categories : int
         Number of categories (named "cat0", "cat1", ...) to generate
+    n_groups : int
+        Number of groups to assign samples to
 
     Returns
     -------
     DataFrame
         Field 'value' is a weight or score for each element.
+        Field 'group' is the group assignment for each element.
         Field 'index' is a unique id for each element.
         Index includes a boolean indicator mask for each category.
 
@@ -40,6 +43,8 @@ def generate_samples(seed=0, n_samples=10000, n_categories=3):
 
     df.reset_index(inplace=True)
     df.set_index(["cat%d" % i for i in range(n_categories)], inplace=True)
+    df['group'] = rng.randint(0, n_groups, size=n_samples)
+    df['group'] = 'group' + df['group'].astype(str)
     return df
 
 
@@ -69,7 +74,35 @@ def generate_counts(seed=0, n_samples=10000, n_categories=3):
     return df.value.groupby(level=list(range(n_categories))).count()
 
 
-def generate_data(seed=0, n_samples=10000, n_sets=3, aggregated=False):
+def generate_counts_grouped(seed=0, n_samples=10000, n_categories=3, n_groups=4):
+    """Generate artificial counts corresponding to set intersections, for each individual group
+    
+    Parameters
+    ----------
+    seed : int
+        A seed for randomisation
+    n_samples : int
+        Number of samples to generate statistics over
+    n_categories : int
+        Number of categories (named "cat0", "cat1", ...) to generate
+    n_groups : int
+        Number of groups (named "group0", "group1", ...) to generate
+
+    Returns
+    -------
+    Series
+        Counts indexed by boolean indicator mask for each category.
+
+    See Also
+    --------
+    generate_samples : Generates a DataFrame of samples that these counts are
+        derived from.
+    """
+    df = generate_samples(seed=seed, n_samples=n_samples, n_categories=n_categories, n_groups=n_groups)
+    return df.groupby(['group'] + df.index.names).value.count()
+
+
+def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
     warnings.warn(
         "generate_data was replaced by generate_counts in version "
         "0.3 and will be removed in version 0.4.",
@@ -77,9 +110,9 @@ def generate_data(seed=0, n_samples=10000, n_sets=3, aggregated=False):
         stacklevel=2,
     )
     if aggregated:
-        return generate_counts(seed=seed, n_samples=n_samples, n_categories=n_sets)
+        return generate_counts_grouped(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)
     else:
-        return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets)[
+        return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)[
             "value"
         ]
 
