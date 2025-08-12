@@ -22,6 +22,7 @@
 .cache/
 .direnv/
 .not_used/
+.dev/
 
 # Compiled source #
 ###################
