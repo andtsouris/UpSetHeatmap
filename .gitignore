@@ -21,6 +21,7 @@
 .tags
 .cache/
 .direnv/
+.not_used/
 
 # Compiled source #
 ###################
