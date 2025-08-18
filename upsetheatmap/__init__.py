@@ -4,9 +4,9 @@ import os
 
 if os.environ.get("__IN-SETUP", None) != "1":
     from .data import (
-        from_contents,
-        from_indicators,
-        from_memberships,
+        # from_contents,
+        # from_indicators,
+        # from_memberships,
         generate_counts,
         generate_data,
         generate_samples,
@@ -20,8 +20,8 @@ if os.environ.get("__IN-SETUP", None) != "1":
         "generate_counts",
         "generate_samples",
         "plot",
-        "from_memberships",
-        "from_contents",
-        "from_indicators",
+        # "from_memberships",
+        # "from_contents",
+        # "from_indicators",
         "query",
     ]

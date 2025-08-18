@@ -116,7 +116,7 @@ def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=Fals
             "value"
         ]
 
-
+a = [
 # def from_indicators(indicators, data=None):
 #     """Load category membership indicated by a boolean indicator matrix
 
@@ -433,3 +433,4 @@ def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=Fals
 #         df = pd.concat([data, df], axis=1, sort=False)
 #     df.index.name = id_column
 #     return df.reset_index().set_index(cat_names)
+]
