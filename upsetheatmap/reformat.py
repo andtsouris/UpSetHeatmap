@@ -73,7 +73,6 @@ def _check_index(df):
             "The DataFrame has values in its index that are not " "boolean"
         )
     df = df.copy(deep=False)
-    # XXX: this may break if input is not MultiIndex
     kw = {
         "levels": [x.astype(bool) for x in df.index.levels],
         "names": df.index.names,

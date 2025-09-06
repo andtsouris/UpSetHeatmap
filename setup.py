@@ -23,7 +23,7 @@ def setup_package():
             packages=["upsetheatmap"],
             license="BSD-3-Clause",
             extras_require={"testing": ["pytest>=2.7", "pytest-cov<2.6"]},
-            # TODO: check versions
+            # DONE: check versions
             install_requires=["pandas>=0.23", "matplotlib>=2.0"],
         )
     finally:

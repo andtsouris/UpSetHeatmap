@@ -52,7 +52,6 @@ def _process_data(
     agg = results.subset_sizes
 
     # add '_bin' to df indicating index in agg
-    # XXX: ugly!
     def _pack_binary(X):
         X = pd.DataFrame(X)
         # use objects if arbitrary precision integers are needed
@@ -470,7 +469,6 @@ class UpSet:
         if self._horizontal:
             data_df = data_df.loc[:, ::-1]  # reverse: top row is top of stack
 
-        # TODO: colors should be broadcastable to data_df shape
         if callable(colors):
             colors = colors(range(data_df.shape[1]))
         elif isinstance(colors, (str, type(None))):
@@ -577,8 +575,6 @@ class UpSet:
         -------
         None
         """
-        # TODO: allow sort_by = {"lexical", "sum_squares", "rev_sum_squares",
-        #                        list of labels}
         self._subset_plots.append(
             {
                 "type": "stacked_bars",
@@ -805,7 +801,6 @@ class UpSet:
         if self._element_size is not None:  # noqa
             s = (self._element_size * 0.35) ** 2
         else:
-            # TODO: make s relative to colw
             s = 200
         ax.scatter(
             *self._swapaxes(x, y),
