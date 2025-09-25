@@ -102,19 +102,19 @@ def generate_counts_grouped(seed=0, n_samples=10000, n_categories=3, n_groups=4)
     return df.groupby(['group'] + df.index.names).value.count()
 
 
-def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
-    warnings.warn(
-        "generate_data was replaced by generate_counts in version "
-        "0.3 and will be removed in version 0.4.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    if aggregated:
-        return generate_counts_grouped(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)
-    else:
-        return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)[
-            "value"
-        ]
+# def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
+#     warnings.warn(
+#         "generate_data was replaced by generate_counts in version "
+#         "0.3 and will be removed in version 0.4.",
+#         DeprecationWarning,
+#         stacklevel=2,
+#     )
+#     if aggregated:
+#         return generate_counts_grouped(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)
+#     else:
+#         return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)[
+#             "value"
+#         ]
 
 
 # def from_indicators(indicators, data=None):
