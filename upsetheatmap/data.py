@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_samples(seed=0, n_samples=10000, n_categories=3, n_groups=5):
+def generate_samples(seed: int = 0, n_samples: int = 10000, n_categories: int = 3, n_groups: int = 5) -> pd.DataFrame:
     """Generate artificial samples assigned to set intersections
 
     Parameters
@@ -48,7 +48,7 @@ def generate_samples(seed=0, n_samples=10000, n_categories=3, n_groups=5):
     return df
 
 
-def generate_counts(seed=0, n_samples=10000, n_categories=3):
+def generate_counts(seed: int = 0, n_samples: int = 10000, n_categories: int = 3) -> pd.Series:
     """Generate artificial counts corresponding to set intersections
 
     Parameters
@@ -74,7 +74,7 @@ def generate_counts(seed=0, n_samples=10000, n_categories=3):
     return df.value.groupby(level=list(range(n_categories))).count()
 
 
-def generate_counts_grouped(seed=0, n_samples=10000, n_categories=3, n_groups=4):
+def generate_counts_grouped(seed: int = 0 , n_samples: int = 1000, n_categories: int = 3, n_groups: int = 4) -> pd.Series:
     """Generate artificial counts corresponding to set intersections, for each individual group
     
     Parameters
