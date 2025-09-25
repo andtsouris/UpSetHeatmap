@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def _aggregate_data(df, subset_size, sum_over):
+def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | None) -> tuple[pd.DataFrame, pd.Series, pd.Series]:
     """
     Returns
     -------
@@ -70,7 +70,7 @@ def _aggregate_data(df, subset_size, sum_over):
     return df, aggregated, group_sizes
 
 
-def _check_index(df):
+def _check_index(df: pd.DataFrame) -> pd.DataFrame:
     # check all indices are boolean
     if not all({True, False} >= set(level) for level in df.index.levels):
         raise ValueError(
@@ -96,7 +96,7 @@ def _scalar_to_list(val):
     return val
 
 
-def _check_percent(value, agg):
+def _check_percent(value: str | int | float, agg: pd.Series) -> float | int | None:
     if not isinstance(value, str):
         return value
     try:
@@ -214,7 +214,7 @@ class QueryResult:
         Total number of samples, or sum of sum_over value.
     """
 
-    def __init__(self, data, subset_sizes, category_totals, total):
+    def __init__(self, data: pd.DataFrame, subset_sizes: pd.Series, category_totals: pd.Series, total: int | float):
         self.data = data
         self.subset_sizes = subset_sizes
         self.category_totals = category_totals
@@ -229,7 +229,7 @@ class QueryResult:
     @property
     def subsets(self):
         categories = np.asarray(self.data.index.names)
-        return {
+        return {    
             frozenset(categories.take(mask)): subset_data
             for mask, subset_data in self.data.groupby(
                 level=list(range(len(categories))), sort=False
