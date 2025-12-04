@@ -21,21 +21,7 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
             f"subset_size should be one of {_SUBSET_SIZE_VALUES}."
             f" Got {repr(subset_size)}"
         )
-    # if df.ndim == 1:
-    #     # Series
-    #     input_name = df.name
-    #     df = pd.DataFrame({"_value": df})
-
-    #     if subset_size == "auto" and not df.index.is_unique:
-    #         raise ValueError(
-    #             'subset_size="auto" cannot be used for a '
-    #             "Series with non-unique groups."
-    #         )
-    #     if sum_over is not None:
-    #         raise ValueError("sum_over is not applicable when the input is a " "Series")
-    #     sum_over = False if subset_size == "count" else "_value"
-    # else:
-        # DataFrame
+    
     if sum_over is False:
         raise ValueError("Unsupported value for sum_over: False")
     elif subset_size == "auto" and sum_over is None:
@@ -63,9 +49,6 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
         group_sizes = df.groupby('group')['value'].sum()
     else:
         raise ValueError("Unsupported value for sum_over: %r" % sum_over)
-
-    # if aggregated.name == "_value":
-    #     aggregated.name = input_name
 
     return df, aggregated, group_sizes
 
@@ -214,15 +197,18 @@ class QueryResult:
         Total number of samples, or sum of sum_over value.
     """
 
-    def __init__(self, data: pd.DataFrame, subset_sizes: pd.Series, category_totals: pd.Series, total: int | float):
+    def __init__(self, data: pd.DataFrame, subset_sizes: pd.Series,
+                 category_totals: pd.Series, group_totals: pd.Series, total: int | float):
         self.data = data
         self.subset_sizes = subset_sizes
         self.category_totals = category_totals
+        self.group_totals = group_totals
         self.total = total
 
     def __repr__(self):
         return (
-            "QueryResult(data={data}, subset_sizes={subset_sizes}, "
+            "QueryResult(data={data}, "
+            "subset_sizes={subset_sizes}, group_totals={group_totals}, "
             "category_totals={category_totals}, total={total}".format(**vars(self))
         )
 
@@ -392,10 +378,8 @@ def query(
         for name in agg.index.names
     ]
     category_totals = pd.Series(category_totals, index=agg.index.names)
-
-# LATER: Implement group_totals, similar to category_totals
-    # group_size = data.groupby('group').size()
-
+    group_totals = data.groupby('group')['value'].sum()
+    
     if include_empty_subsets:
         nlevels = len(agg.index.levels)
         if nlevels > 10:
@@ -459,5 +443,9 @@ def query(
         raise ValueError("Unknown sort_by: %r" % sort_by)
 
     return QueryResult(
-        data=data, subset_sizes=agg, category_totals=category_totals, total=grand_total
+        data=data,
+        subset_sizes=agg,
+        category_totals=category_totals,
+        group_totals=group_totals,
+        total=grand_total
     )
