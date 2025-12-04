@@ -8,7 +8,7 @@ import re
 
 ODD_REPEAT_PATTERN = r"((?<!{c}){c}({c}{c})*(?!{c}))"
 EVEN_REPEAT_PATTERN = r"(?<!{c})({c}{c})+(?!{c})"
-SPECIFIER_PATTERN = r"[^(]*[diouxXeEfFgGcs]"  # TODO: handle r
+SPECIFIER_PATTERN = r"[^(]*[diouxXeEfFgGcs]"  
 
 
 def __to_new_format(fmt: str, named=True):
