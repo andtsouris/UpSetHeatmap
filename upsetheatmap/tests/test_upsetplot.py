@@ -15,7 +15,6 @@ from pandas.testing import assert_frame_equal, assert_index_equal, assert_series
 from upsetheatmap import UpSet, generate_counts, generate_samples, plot
 from upsetheatmap.plotting import _process_data
 
-# TODO: warnings should raise errors
 
 
 def is_ascending(seq):
@@ -82,7 +81,6 @@ def test_process_data_series(x, sort_by, sort_categories_by):
     elif sort_by == "degree":
         # check degree order
         assert is_ascending(intersections.index.to_frame().sum(axis=1))
-        # TODO: within a same-degree group, the tuple of active names should
         #       be in sort-order
     elif sort_by == "-degree":
         # check degree order
@@ -413,7 +411,6 @@ def test_vertical():
     vert_width = fig.get_figwidth()
     assert horz_width / horz_height > vert_width / vert_height
 
-    # TODO: test axes positions, plot order, bar orientation
     pass
 
 
@@ -440,9 +437,6 @@ def test_element_size():
     UpSet(X, element_size=None).make_grid(fig)
     figsize_after = fig.get_figwidth(), fig.get_figheight()
     assert figsize_before == figsize_after
-
-    # TODO: make sure axes are all within figure
-    # TODO: make sure text does not overlap axes, even with element_size=None
 
 
 def _walk_artists(el):
@@ -1173,7 +1167,6 @@ def test_style_subsets_artists(orientation):
         check_dtype=False,
     )
 
-    # TODO: check lines between dots
     # matrix_line_collection = upset_axes["matrix"].collections[1]
 
 

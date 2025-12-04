@@ -233,6 +233,6 @@ def test_from_indicators_equivalence(indicators, data):
     )
 
 
-def test_generate_data_warning():
-    with pytest.warns(DeprecationWarning):
-        generate_data()
+# def test_generate_data_warning():
+#     with pytest.warns(DeprecationWarning):
+#         generate_data()

@@ -8,8 +8,8 @@ from matplotlib import colors, patches
 from matplotlib import pyplot as plt
 
 from . import util
-from .reformat import _get_subset_mask, query
-
+# from .reformat import _get_subset_mask, query
+from .reformat import query
 # prevents ImportError on matplotlib versions >3.5.2
 try:
     from matplotlib.tight_layout import get_renderer
@@ -52,7 +52,6 @@ def _process_data(
     agg = results.subset_sizes
 
     # add '_bin' to df indicating index in agg
-    # XXX: ugly!
     def _pack_binary(X):
         X = pd.DataFrame(X)
         # use objects if arbitrary precision integers are needed
@@ -439,18 +438,18 @@ class UpSet:
             "linestyle": linestyle,
         }
         style = {k: v for k, v in style.items() if v is not None}
-        mask = _get_subset_mask(
-            self.intersections,
-            present=present,
-            absent=absent,
-            min_subset_size=min_subset_size,
-            max_subset_size=max_subset_size,
-            max_subset_rank=max_subset_rank,
-            min_degree=min_degree,
-            max_degree=max_degree,
-        )
-        for idx in np.flatnonzero(mask):
-            self.subset_styles[idx].update(style)
+        # mask = _get_subset_mask(
+        #     self.intersections,
+        #     present=present,
+        #     absent=absent,
+        #     min_subset_size=min_subset_size,
+        #     max_subset_size=max_subset_size,
+        #     max_subset_rank=max_subset_rank,
+        #     min_degree=min_degree,
+        #     max_degree=max_degree,
+        # )
+        # for idx in np.flatnonzero(mask):
+        #     self.subset_styles[idx].update(style)
 
         if label is not None:
             if "facecolor" not in style:
@@ -470,7 +469,6 @@ class UpSet:
         if self._horizontal:
             data_df = data_df.loc[:, ::-1]  # reverse: top row is top of stack
 
-        # TODO: colors should be broadcastable to data_df shape
         if callable(colors):
             colors = colors(range(data_df.shape[1]))
         elif isinstance(colors, (str, type(None))):
@@ -577,8 +575,6 @@ class UpSet:
         -------
         None
         """
-        # TODO: allow sort_by = {"lexical", "sum_squares", "rev_sum_squares",
-        #                        list of labels}
         self._subset_plots.append(
             {
                 "type": "stacked_bars",
@@ -805,7 +801,6 @@ class UpSet:
         if self._element_size is not None:  # noqa
             s = (self._element_size * 0.35) ** 2
         else:
-            # TODO: make s relative to colw
             s = 200
         ax.scatter(
             *self._swapaxes(x, y),
@@ -1122,6 +1117,22 @@ class UpSet:
         self._reorient(fig).align_ylabels(
             [out[plot["id"]] for plot in self._subset_plots]
         )
+
+        print(self._df)
+
+        # Add heatmap to the figure
+        df = self._df.reset_index()
+        # detect category columns (those that are boolean)
+        cat_cols = [c for c in df.columns if df[c].dropna().isin([True, False]).all()]
+        # build a compact combination label like "101" (cat0,cat1,cat2)
+        df['comb'] = df[cat_cols].apply(lambda row: ''.join('1' if bool(v) else '0' for v in row), axis=1)
+        pivot = df.groupby(['group', 'comb']).size().unstack(fill_value=0)
+        heatmap_ax = self._reorient(fig.add_subplot)(specs.get('heatmap', specs['matrix']), sharex=matrix_ax)
+        im = heatmap_ax.imshow(pivot.values, aspect='auto', cmap='viridis')
+        heatmap_ax.set_ylabel('group')
+        out['heatmap'] = heatmap_ax
+
+
         return out
 
     PLOT_TYPES = {

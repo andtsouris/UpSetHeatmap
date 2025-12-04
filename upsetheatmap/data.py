@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_samples(seed=0, n_samples=10000, n_categories=3, n_groups=5):
+def generate_samples(seed: int = 0, n_samples: int = 10000, n_categories: int = 3, n_groups: int = 5) -> pd.DataFrame:
     """Generate artificial samples assigned to set intersections
 
     Parameters
@@ -48,7 +48,7 @@ def generate_samples(seed=0, n_samples=10000, n_categories=3, n_groups=5):
     return df
 
 
-def generate_counts(seed=0, n_samples=10000, n_categories=3):
+def generate_counts(seed: int = 0, n_samples: int = 10000, n_categories: int = 3) -> pd.Series:
     """Generate artificial counts corresponding to set intersections
 
     Parameters
@@ -74,7 +74,7 @@ def generate_counts(seed=0, n_samples=10000, n_categories=3):
     return df.value.groupby(level=list(range(n_categories))).count()
 
 
-def generate_counts_grouped(seed=0, n_samples=10000, n_categories=3, n_groups=4):
+def generate_counts_grouped(seed: int = 0 , n_samples: int = 1000, n_categories: int = 3, n_groups: int = 4) -> pd.Series:
     """Generate artificial counts corresponding to set intersections, for each individual group
     
     Parameters
@@ -102,19 +102,19 @@ def generate_counts_grouped(seed=0, n_samples=10000, n_categories=3, n_groups=4)
     return df.groupby(['group'] + df.index.names).value.count()
 
 
-def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
-    warnings.warn(
-        "generate_data was replaced by generate_counts in version "
-        "0.3 and will be removed in version 0.4.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    if aggregated:
-        return generate_counts_grouped(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)
-    else:
-        return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)[
-            "value"
-        ]
+# def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
+#     warnings.warn(
+#         "generate_data was replaced by generate_counts in version "
+#         "0.3 and will be removed in version 0.4.",
+#         DeprecationWarning,
+#         stacklevel=2,
+#     )
+#     if aggregated:
+#         return generate_counts_grouped(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)
+#     else:
+#         return generate_samples(seed=seed, n_samples=n_samples, n_categories=n_sets, n_groups=n_groups)[
+#             "value"
+#         ]
 
 a = [
 # def from_indicators(indicators, data=None):

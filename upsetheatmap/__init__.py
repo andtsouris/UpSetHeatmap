@@ -8,7 +8,6 @@ if os.environ.get("__IN-SETUP", None) != "1":
         # from_indicators,
         # from_memberships,
         generate_counts,
-        generate_data,
         generate_samples,
     )
     from .plotting import UpSet, plot
@@ -16,7 +15,6 @@ if os.environ.get("__IN-SETUP", None) != "1":
 
     __all__ = [
         "UpSet",
-        "generate_data",
         "generate_counts",
         "generate_samples",
         "plot",
