@@ -12,7 +12,8 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
         full data frame
     aggregated : Series
         aggregates
-
+    aggregated_byGroup: pd.DataFrame
+        Aggregates per group
     group_size : Series
     """
     _SUBSET_SIZE_VALUES = ["auto", "count", "sum"]
@@ -39,18 +40,27 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
             "provided."
         )
 
+    # Group_by for the aggregation
     gb = df.groupby(level=list(range(df.index.nlevels)), sort=False)
+    # Group_by for the aggregation in each individual group
+    df_byGroup = df.copy()
+    df_byGroup.index = pd.MultiIndex.from_frame(df_byGroup.index.to_frame().reset_index(drop=True).assign(group=df_byGroup['group'].values))
+    df_byGroup = df_byGroup.drop(['group', 'index'], axis=1)
+    gb_byGroup = df_byGroup.groupby(level=list(range(df_byGroup.index.nlevels)), sort=False)
     if sum_over is False:
         aggregated = gb.size()
         aggregated.name = "size"
+        aggregated_byGroup = gb_byGroup.size()
         group_sizes = df.groupby('group').size()
+
     elif hasattr(sum_over, "lower"):
         aggregated = gb[sum_over].sum()
+        aggregated_byGroup = gb_byGroup[sum_over].sum()
         group_sizes = df.groupby('group')['value'].sum()
     else:
         raise ValueError("Unsupported value for sum_over: %r" % sum_over)
 
-    return df, aggregated, group_sizes
+    return df, aggregated, aggregated_byGroup, group_sizes
 
 
 def _check_index(df: pd.DataFrame) -> pd.DataFrame:
