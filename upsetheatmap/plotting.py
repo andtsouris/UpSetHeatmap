@@ -1120,8 +1120,9 @@ class UpSet:
 
         print(self._df)
 
-        # Add heatmap to the figure
+        # TODO: Add heatmap to the figure
         df = self._df.reset_index()
+
         # detect category columns (those that are boolean)
         cat_cols = [c for c in df.columns if df[c].dropna().isin([True, False]).all()]
         # build a compact combination label like "101" (cat0,cat1,cat2)
