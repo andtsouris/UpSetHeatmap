@@ -208,11 +208,12 @@ class QueryResult:
     """
 
     def __init__(self, data: pd.DataFrame, subset_sizes: pd.Series,
-                 category_totals: pd.Series, group_totals: pd.Series, total: int | float):
+                 category_totals: pd.Series, group_totals: pd.Series, group_agg: pd.Series, total: int | float):
         self.data = data
         self.subset_sizes = subset_sizes
         self.category_totals = category_totals
         self.group_totals = group_totals
+        self.group_agg = group_agg
         self.total = total
 
     def __repr__(self):
