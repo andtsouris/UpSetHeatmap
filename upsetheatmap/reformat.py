@@ -380,7 +380,7 @@ def query(
                 False     19  1.339895
     """
 
-    data, agg, group_sizes = _aggregate_data(data, subset_size, sum_over)
+    data, agg, group_agg, group_sizes = _aggregate_data(data, subset_size, sum_over)
     data = _check_index(data)
     grand_total = agg.sum()
     category_totals = [
@@ -406,20 +406,7 @@ def query(
         )
         new_agg.update(agg)
         agg = new_agg
-# LATER: Pass the group size and rank parameters to _filter_subsets
-    # data, agg = _filter_subsets(
-    #     data,
-    #     agg,
-    #     min_subset_size=min_subset_size,
-    #     max_subset_size=max_subset_size,
-    #     max_subset_rank=max_subset_rank,
-    #     min_degree=min_degree,
-    #     max_degree=max_degree,
-    #     present=present,
-    #     absent=absent,
-    # )
-
-    # sort:
+    # LATER: Pass the group size and rank parameters to _filter_subsets
     # LATER: Add sorting of the groups
     if sort_categories_by in ("cardinality", "-cardinality"):
         category_totals.sort_values(
@@ -455,6 +442,7 @@ def query(
     return QueryResult(
         data=data,
         subset_sizes=agg,
+        group_agg=group_agg,
         category_totals=category_totals,
         group_totals=group_totals,
         total=grand_total
