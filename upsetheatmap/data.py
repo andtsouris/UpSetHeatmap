@@ -102,6 +102,8 @@ def generate_counts_grouped(seed: int = 0 , n_samples: int = 1000, n_categories:
     return df.groupby(['group'] + df.index.names).value.count()
 
 
+
+a = [
 # def generate_data(seed=0, n_samples=10000, n_sets=3, n_groups=4, aggregated=False):
 #     warnings.warn(
 #         "generate_data was replaced by generate_counts in version "
@@ -116,7 +118,7 @@ def generate_counts_grouped(seed: int = 0 , n_samples: int = 1000, n_categories:
 #             "value"
 #         ]
 
-a = [
+
 # def from_indicators(indicators, data=None):
 #     """Load category membership indicated by a boolean indicator matrix
 
