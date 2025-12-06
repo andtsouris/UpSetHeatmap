@@ -50,6 +50,9 @@ def _process_data(
 
     df = results.data
     agg = results.subset_sizes
+    group_agg = results.group_agg
+    category_totals = results.category_totals
+    group_totals = results.group_totals
 
     # add '_bin' to df indicating index in agg
     def _pack_binary(X):
@@ -72,7 +75,7 @@ def _process_data(
     if reverse:
         agg = agg[::-1]
 
-    return results.total, df, agg, results.category_totals
+    return results.total, df, agg, group_agg, category_totals, group_totals
 
 
 def _multiply_alpha(c, mult):
@@ -339,7 +342,7 @@ class UpSet:
         self._show_counts = show_counts
         self._show_percentages = show_percentages
 
-        (self.total, self._df, self.intersections, self.totals) = _process_data(
+        (self.total, self._df, self.intersections, self.group_agg, self.totals, self.group_totals) = _process_data(
             data,
             sort_by=sort_by,
             sort_categories_by=sort_categories_by,
@@ -665,9 +668,11 @@ class UpSet:
         tick_axis.grid(True)
 
     def make_grid(self, fig=None):
+        # TODO: Add space for heatmap in the plot grid
         """Get a SubplotSpec for each Axes, accounting for label text width"""
         n_cats = len(self.totals)
         n_inters = len(self.intersections)
+        n_groups = len(self.group_totals)
 
         if fig is None:
             fig = plt.gcf()
@@ -697,6 +702,8 @@ class UpSet:
         figw = self._reorient(fig.get_window_extent(**window_extent_args)).width
 
         sizes = np.asarray([p["elements"] for p in self._subset_plots])
+        print(sizes)
+        print(self._subset_plots)
         fig = self._reorient(fig)
 
         non_text_nelems = len(self.intersections) + self._totals_plot_elements
@@ -723,6 +730,7 @@ class UpSet:
             out = {
                 "matrix": gridspec[-n_cats:, -n_inters:],
                 "shading": gridspec[-n_cats:, :],
+                "heatmap":None,
                 "totals": None
                 if self._totals_plot_elements == 0
                 else gridspec[-n_cats:, : self._totals_plot_elements],
@@ -737,6 +745,7 @@ class UpSet:
             out = {
                 "matrix": gridspec[-n_inters:, :n_cats],
                 "shading": gridspec[:, :n_cats],
+                "heatmap":None,
                 "totals": None
                 if self._totals_plot_elements == 0
                 else gridspec[: self._totals_plot_elements, :n_cats],
@@ -1118,7 +1127,7 @@ class UpSet:
             [out[plot["id"]] for plot in self._subset_plots]
         )
 
-        print(self._df)
+        # print(self._df)
 
         # TODO: Add heatmap to the figure
         df = self._df.reset_index()
