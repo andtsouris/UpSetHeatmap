@@ -702,8 +702,6 @@ class UpSet:
         figw = self._reorient(fig.get_window_extent(**window_extent_args)).width
 
         sizes = np.asarray([p["elements"] for p in self._subset_plots])
-        print(sizes)
-        print(self._subset_plots)
         fig = self._reorient(fig)
 
         non_text_nelems = len(self.intersections) + self._totals_plot_elements
