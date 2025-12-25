@@ -719,7 +719,7 @@ class UpSet:
         GS = self._reorient(matplotlib.gridspec.GridSpec)
         gridspec = GS(
             *self._swapaxes(
-                n_cats + (sizes.sum() or 0),
+                n_cats + n_groups + (sizes.sum() or 0),
                 n_inters + text_nelems + self._totals_plot_elements,
             ),
             hspace=1,
@@ -728,8 +728,8 @@ class UpSet:
             out = {
                 "matrix": gridspec[-n_cats:, -n_inters:],
                 "shading": gridspec[-n_cats:, :],
-                "heatmap":None,
-                "totals": None
+                "heatmap": gridspec[-(n_cats+n_groups):-n_cats, -n_inters:],
+                "totals":  None
                 if self._totals_plot_elements == 0
                 else gridspec[-n_cats:, : self._totals_plot_elements],
                 "gs": gridspec,
@@ -753,6 +753,7 @@ class UpSet:
             for start, stop, plot in zip(
                 np.hstack([[0], cumsizes]), cumsizes, self._subset_plots
             ):
+                print(start, stop, plot["id"])
                 out[plot["id"]] = gridspec[-n_inters:, start + n_cats : stop + n_cats]
         return out
 
@@ -1108,6 +1109,7 @@ class UpSet:
         out = {"matrix": matrix_ax, "shading": shading_ax, "totals": totals_ax}
 
         for plot in self._subset_plots:
+            print(plot["id"])
             ax = self._reorient(fig.add_subplot)(specs[plot["id"]], sharex=matrix_ax)
             if plot["type"] == "default":
                 self.plot_intersections(ax)
@@ -1138,6 +1140,7 @@ class UpSet:
         heatmap_ax = self._reorient(fig.add_subplot)(specs.get('heatmap', specs['matrix']), sharex=matrix_ax)
         im = heatmap_ax.imshow(pivot.values, aspect='auto', cmap='viridis')
         heatmap_ax.set_ylabel('group')
+        heatmap_ax.xaxis.set_visible(False)
         out['heatmap'] = heatmap_ax
 
 
