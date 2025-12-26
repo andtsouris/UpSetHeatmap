@@ -56,7 +56,7 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
     elif hasattr(sum_over, "lower"):
         aggregated = gb[sum_over].sum()
         aggregated_byGroup = gb_byGroup[sum_over].sum()
-        group_sizes = df.groupby('group')['valuem()
+        group_sizes = df.groupby('group')['value'].sum()
     else:
         raise ValueError("Unsupported value for sum_over: %r" % sum_over)
 
