@@ -668,7 +668,7 @@ class UpSet:
         tick_axis.grid(True)
 
     def make_grid(self, fig=None):
-        # TODO: Add space for heatmap in the plot grid
+        # Add space for heatmap in the plot grid
         """Get a SubplotSpec for each Axes, accounting for label text width"""
         n_cats = len(self.totals)
         n_inters = len(self.intersections)
