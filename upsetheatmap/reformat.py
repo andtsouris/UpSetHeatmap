@@ -245,10 +245,13 @@ def query(
     max_degree=None,
     sort_by="degree",
     sort_categories_by="cardinality",
+    sort_groups_by=None,
+    group_order=None,
     subset_size="auto",
     sum_over=None,
     include_empty_subsets=False,
 ):
+# TODO: Add parameters for group sorting to the dostring
     """Transform and filter a categorised dataset
 
     Retrieve the set of items and totals corresponding to subsets of interest.
@@ -407,6 +410,18 @@ def query(
         )
         new_agg.update(agg)
         agg = new_agg
+        
+    # DONE: Add sorting of the groups
+    if sort_groups_by == "count":
+        group_order = group_sizes.sort_values(ascending=False).index.tolist()
+    elif sort_groups_by == "custom":
+        if not set(group_order) == set(group_sizes.index.tolist()):
+            raise ValueError(f"group_order must be list containing all the group names: {group_sizes.index.tolist()}")
+    elif group_order == None:
+        group_order = group_sizes.index.tolist()
+    else:
+        raise ValueError("sort_groups_by must be one of {'count', 'custom', None}")
+
     # LATER: Pass the group size and rank parameters to _filter_subsets
     # LATER: Add sorting of the groups
     if sort_categories_by in ("cardinality", "-cardinality"):
