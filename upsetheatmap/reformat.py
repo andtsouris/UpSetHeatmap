@@ -56,7 +56,7 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
     elif hasattr(sum_over, "lower"):
         aggregated = gb[sum_over].sum()
         aggregated_byGroup = gb_byGroup[sum_over].sum()
-        group_sizes = df.groupby('group')['value'].sum()
+        group_sizes = df.groupby('group')['valuem()
     else:
         raise ValueError("Unsupported value for sum_over: %r" % sum_over)
 
@@ -411,7 +411,7 @@ def query(
         new_agg.update(agg)
         agg = new_agg
         
-    # DONE: Add sorting of the groups
+    # Add sorting of the groups
     if sort_groups_by == "count":
         group_order = group_sizes.sort_values(ascending=False).index.tolist()
     elif sort_groups_by == "custom":
@@ -454,6 +454,16 @@ def query(
         pass
     else:
         raise ValueError("Unknown sort_by: %r" % sort_by)
+
+    # Implement group_agg reorder to fit the index orders of agg and group_totals
+    combined_index = []
+    for g in group_order:
+        for idx in agg.index:
+            combined_index.append(idx+(g,))
+    combined_index
+
+    group_agg = group_agg.reindex(pd.MultiIndex.from_tuples(combined_index, names=group_agg.index.names))
+    group_agg = group_agg.fillna(0)
 
     return QueryResult(
         data=data,
