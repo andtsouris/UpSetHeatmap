@@ -1129,18 +1129,44 @@ class UpSet:
 
         # print(self._df)
 
-        # TODO: Add heatmap to the figure
-        df = self._df.reset_index()
+        # DONE: Add heatmap to the figure
+        heatmap_ax = None
+        if specs.get("heatmap") is not None and self.group_agg is not None and not self.group_agg.empty:
+            heatmap_ax = self._reorient(fig.add_subplot)(specs["heatmap"], sharex=matrix_ax)
 
-        # detect category columns (those that are boolean)
-        cat_cols = [c for c in df.columns if df[c].dropna().isin([True, False]).all()]
-        # build a compact combination label like "101" (cat0,cat1,cat2)
-        df['comb'] = df[cat_cols].apply(lambda row: ''.join('1' if bool(v) else '0' for v in row), axis=1)
-        pivot = df.groupby(['group', 'comb']).size().unstack(fill_value=0)
-        heatmap_ax = self._reorient(fig.add_subplot)(specs.get('heatmap', specs['matrix']), sharex=matrix_ax)
-        im = heatmap_ax.imshow(pivot.values, aspect='auto', cmap='viridis')
-        heatmap_ax.set_ylabel('group')
-        heatmap_ax.xaxis.set_visible(False)
+            new_group_agg_idx_list = list(self.intersections.index.names)
+            new_group_agg_idx_list.append('group')
+            group_agg_reordered = self.group_agg.reorder_levels(new_group_agg_idx_list)
+            heatmap_data = group_agg_reordered.unstack(fill_value=0).T
+            # Ensure columns match the plot order
+            heatmap_data = heatmap_data[self.intersections.index] # TODO: check what happens when intersections are missing
+            print(32*'#')
+            print(heatmap_data.columns)
+            print(32*'#')
+
+            # The x-axis order is defined by self.intersections.index (aligned above)
+            im = heatmap_ax.imshow(heatmap_data.values, cmap='YlOrRd', aspect='auto')
+            # fig.colorbar(im, ax=heatmap_ax, label='Value')
+            heatmap_ax.set_yticks(np.arange(len(heatmap_data.index)))
+            heatmap_ax.set_yticklabels(heatmap_data.index)
+            heatmap_ax.set_xticks([])
+            heatmap_ax.grid(False)
+            for spine in heatmap_ax.spines.values():
+                spine.set_visible(False)
+        else:
+            raise RuntimeError("Unable to generate the heatmap: group_agg is None or empty")
+        # df = self._df.reset_index()
+        
+
+        # # detect category columns (those that are boolean)
+        # cat_cols = [c for c in df.columns if df[c].dropna().isin([True, False]).all()]
+        # # build a compact combination label like "101" (cat0,cat1,cat2)
+        # df['comb'] = df[cat_cols].apply(lambda row: ''.join('1' if bool(v) else '0' for v in row), axis=1)
+        # pivot = df.groupby(['group', 'comb']).size().unstack(fill_value=0)
+        # heatmap_ax = self._reorient(fig.add_subplot)(specs.get('heatmap', specs['matrix']), sharex=matrix_ax)
+        # im = heatmap_ax.imshow(pivot.values, aspect='auto', cmap='viridis')
+        # heatmap_ax.set_ylabel('group')
+        # heatmap_ax.xaxis.set_visible(False)
         out['heatmap'] = heatmap_ax
 
 
