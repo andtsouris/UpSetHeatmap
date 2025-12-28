@@ -729,7 +729,7 @@ class UpSet:
                 "matrix": gridspec[-n_cats:, -n_inters:],
                 "shading": gridspec[-n_cats:, :],
                 "heatmap": gridspec[-(n_cats+n_groups):-n_cats, -n_inters:],
-                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :-n_inters],
+                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :self._totals_plot_elements],
                 "totals":  None
                 if self._totals_plot_elements == 0
                 else gridspec[-n_cats:, : self._totals_plot_elements],
@@ -745,7 +745,7 @@ class UpSet:
                 "matrix": gridspec[-n_inters:, :n_cats],
                 "shading": gridspec[:, :n_cats],
                 "heatmap":None,
-                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :-n_inters],
+                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :-n_cats],
                 "totals": None
                 if self._totals_plot_elements == 0
                 else gridspec[: self._totals_plot_elements, :n_cats],
