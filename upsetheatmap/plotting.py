@@ -1146,8 +1146,20 @@ class UpSet:
                 specs["totals"], sharey=matrix_ax
             )
             self.plot_totals(totals_ax)
-        out = {"matrix": matrix_ax, "shading": shading_ax, "totals": totals_ax}
 
+
+        # Adding group_totals to the figure
+        if specs.get("group_totals") is None:
+            group_totals_ax = None
+        else:
+            group_totals_ax = self._reorient(fig.add_subplot)(
+                specs["group_totals"], sharey=matrix_ax
+            )
+            self.plot_group_totals(group_totals_ax)
+
+
+
+        out = {"matrix": matrix_ax, "shading": shading_ax, "totals": totals_ax, "group_totals": group_totals_ax}
         for plot in self._subset_plots:
             print(plot["id"])
             ax = self._reorient(fig.add_subplot)(specs[plot["id"]], sharex=matrix_ax)
