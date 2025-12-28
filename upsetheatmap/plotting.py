@@ -974,6 +974,44 @@ class UpSet:
         ax.yaxis.grid(False)
         ax.patch.set_visible(False)
 
+
+    def plot_group_totals(self, ax):
+        """Plot bars indicating total set size"""
+        orig_ax = ax
+        ax = self._reorient(ax)
+        rects = ax.barh(
+            np.arange(len(self.group_totals.index.values)),
+            self.group_totals,
+            0.5,
+            color=self._facecolor,
+            align="center",
+        )
+        self._label_sizes(ax, rects, "left" if self._horizontal else "top")
+
+        for category, rect in zip(self.group_totals.index.values, rects):
+                style = {
+                    k[len("bar_") :]: v
+                for k, v in self.category_styles.get(category, {}).items()
+                if k.startswith("bar_")
+            }
+        style.setdefault("edgecolor", style.get("facecolor", self._facecolor))
+        for attr, val in style.items():
+            getattr(rect, "set_" + attr)(val)
+
+        max_total = self.group_totals.max()
+        if self._horizontal:
+            orig_ax.set_xlim(max_total, 0)
+
+        ax.xaxis.set_ticks_position("top")
+        ax.xaxis.set_label_position("top")
+        for x in ["bottom", "left", "right"]:
+            ax.spines[self._reorient(x)].set_visible(False)
+        ax.yaxis.set_visible(False)
+        ax.xaxis.grid(True)
+        ax.yaxis.grid(False)
+        ax.patch.set_visible(False)
+
+
     def plot_shading(self, ax):
         # shade all rows, set every second row to zero visibility
         for i, category in enumerate(self.totals.index):
