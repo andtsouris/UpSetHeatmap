@@ -419,6 +419,17 @@ def query(
     else:
         raise ValueError("Unknown sort_by: %r" % sort_by)
 
+    mask = _get_subset_mask(
+        agg,
+        min_degree=min_degree,
+        max_degree=max_degree,
+        min_subset_size=min_subset_size,
+        max_subset_size=max_subset_size,
+        max_subset_rank=max_subset_rank,
+    )
+    agg = agg[mask]
+    data = data[data.index.isin(agg.index)]
+
     # Reorder group_agg category levels to match the sorted category order so
     # that combined_index tuples (built from sorted agg.index) align positionally.
     sorted_cat_names = list(category_totals.index.values)
