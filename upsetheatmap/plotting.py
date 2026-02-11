@@ -1214,7 +1214,9 @@ class UpSet:
                 col_sums = col_sums.replace(0, np.nan)
                 heatmap_data = heatmap_data.div(col_sums, axis=1)
                 cbar_label = "Fraction"
-                imshow_kw = {"vmin": 0, "vmax": 1}
+                vmin = np.nanmin(heatmap_data.values)
+                vmax = np.nanmax(heatmap_data.values)
+                imshow_kw = {"vmin": vmin, "vmax": vmax}
             elif self._heatmap_normalize == "zscore":
                 col_mean = heatmap_data.mean(axis=0)
                 col_std = heatmap_data.std(axis=0).replace(0, np.nan)
