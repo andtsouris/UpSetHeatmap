@@ -1191,7 +1191,7 @@ class UpSet:
             group_agg_reordered = self.group_agg.reorder_levels(new_group_agg_idx_list)
             heatmap_data = group_agg_reordered.unstack(fill_value=0).T
             # Ensure columns match the plot order
-            heatmap_data = heatmap_data[self.intersections.index] # TODO: check what happens when intersections are missing
+            heatmap_data = heatmap_data.reindex(columns=self.intersections.index, fill_value=0)
             print(32*'#')
             print(heatmap_data.columns)
             print(32*'#')
