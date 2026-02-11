@@ -10,11 +10,11 @@ if os.environ.get("__IN-SETUP", None) != "1":
         generate_counts,
         generate_samples,
     )
-    from .plotting import UpSet, plot
+    from .plotting import UpSetHeatmap, plot
     from .reformat import query
 
     __all__ = [
-        "UpSet",
+        "UpSetHeatmap",
         "generate_counts",
         "generate_samples",
         "plot",

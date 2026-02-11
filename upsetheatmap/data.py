@@ -279,7 +279,7 @@ a = [
 # def from_memberships(memberships, data=None):
 #     """Load data where each sample has a collection of category names
 
-#     The output should be suitable for passing to `UpSet` or `plot`.
+#     The output should be suitable for passing to `UpSetHeatmap` or `plot`.
 
 #     Parameters
 #     ----------

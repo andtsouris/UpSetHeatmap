@@ -12,7 +12,7 @@ from matplotlib.text import Text
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal, assert_index_equal, assert_series_equal
 
-from upsetheatmap import UpSet, generate_counts, generate_samples, plot
+from upsetheatmap import UpSetHeatmap, generate_counts, generate_samples, plot
 from upsetheatmap.plotting import _process_data
 
 
@@ -321,10 +321,10 @@ def test_not_unique(sort_by, sort_categories_by):
 def test_include_empty_subsets():
     X = generate_counts(n_samples=2, n_categories=3)
 
-    no_empty_upset = UpSet(X, include_empty_subsets=False)
+    no_empty_upset = UpSetHeatmap(X, include_empty_subsets=False)
     assert len(no_empty_upset.intersections) <= 2
 
-    include_empty_upset = UpSet(X, include_empty_subsets=True)
+    include_empty_upset = UpSetHeatmap(X, include_empty_subsets=True)
     assert len(include_empty_upset.intersections) == 2**3
     common_intersections = include_empty_upset.intersections.loc[
         no_empty_upset.intersections.index
@@ -345,7 +345,7 @@ def test_include_empty_subsets():
 def test_param_validation(kw):
     X = generate_counts(n_samples=100)
     with pytest.raises(ValueError):
-        UpSet(X, **kw)
+        UpSetHeatmap(X, **kw)
 
 
 @pytest.mark.parametrize(
@@ -400,13 +400,13 @@ def test_vertical():
     X = generate_counts(n_samples=100)
 
     fig = matplotlib.figure.Figure()
-    UpSet(X, orientation="horizontal").make_grid(fig)
+    UpSetHeatmap(X, orientation="horizontal").make_grid(fig)
     horz_height = fig.get_figheight()
     horz_width = fig.get_figwidth()
     assert horz_height < horz_width
 
     fig = matplotlib.figure.Figure()
-    UpSet(X, orientation="vertical").make_grid(fig)
+    UpSetHeatmap(X, orientation="vertical").make_grid(fig)
     vert_height = fig.get_figheight()
     vert_width = fig.get_figwidth()
     assert horz_width / horz_height > vert_width / vert_height
@@ -419,7 +419,7 @@ def test_element_size():
     figsizes = []
     for element_size in range(10, 50, 5):
         fig = matplotlib.figure.Figure()
-        UpSet(X, element_size=element_size).make_grid(fig)
+        UpSetHeatmap(X, element_size=element_size).make_grid(fig)
         figsizes.append((fig.get_figwidth(), fig.get_figheight()))
 
     figwidths, figheights = zip(*figsizes)
@@ -434,7 +434,7 @@ def test_element_size():
 
     fig = matplotlib.figure.Figure()
     figsize_before = fig.get_figwidth(), fig.get_figheight()
-    UpSet(X, element_size=None).make_grid(fig)
+    UpSetHeatmap(X, element_size=None).make_grid(fig)
     figsize_after = fig.get_figwidth(), fig.get_figheight()
     assert figsize_before == figsize_after
 
@@ -506,7 +506,7 @@ def test_show_counts(orientation):
 def test_add_catplot():
     pytest.importorskip("seaborn")
     X = generate_counts(n_samples=100)
-    upset = UpSet(X)
+    upset = UpSetHeatmap(X)
     # smoke test
     upset.add_catplot("violin")
     fig = matplotlib.figure.Figure()
@@ -522,7 +522,7 @@ def test_add_catplot():
     X = generate_counts(n_samples=100)
     X.name = "foo"
     X = X.to_frame()
-    upset = UpSet(X, subset_size="count")
+    upset = UpSetHeatmap(X, subset_size="count")
     # must provide value with DataFrame
     with pytest.raises(ValueError):
         upset.add_catplot("violin")
@@ -587,7 +587,7 @@ def test_add_stacked_bars(orientation, show_counts):
         generate_samples().value + np.random.rand() / 2, 3
     ).cat.codes.map({0: "foo", 1: "bar", 2: "baz"})
 
-    upset = UpSet(df, show_counts=show_counts, orientation=orientation)
+    upset = UpSetHeatmap(df, show_counts=show_counts, orientation=orientation)
     upset.add_stacked_bars(by="label")
     upset_axes = upset.plot()
 
@@ -657,7 +657,7 @@ def test_add_stacked_bars_colors(colors, expected):
         generate_samples().value + np.random.rand() / 2, 3
     ).cat.codes.map({0: "foo", 1: "bar", 2: "baz"})
 
-    upset = UpSet(df)
+    upset = UpSetHeatmap(df)
     upset.add_stacked_bars(by="label", colors=colors, title="Count by gender")
     upset_axes = upset.plot()
     stacked_axes = upset_axes["extra1"]
@@ -678,7 +678,7 @@ def test_add_stacked_bars_sum_over(int_sum_over, stack_sum_over, show_counts):
         generate_samples().value + np.random.rand() / 2, 3
     ).cat.codes.map({0: "foo", 1: "bar", 2: "baz"})
 
-    upset = UpSet(
+    upset = UpSetHeatmap(
         df, sum_over="value" if int_sum_over else None, show_counts=show_counts
     )
     upset.add_stacked_bars(
@@ -725,14 +725,14 @@ def test_index_must_be_bool(x):
     x[["cat0", "cat2", "cat2"]] = x[["cat0", "cat1", "cat2"]].astype(int)
     x = x.set_index(["cat0", "cat1", "cat2"]).iloc[:, 0]
 
-    UpSet(x)
+    UpSetHeatmap(x)
 
     # other ints are not
     x = x.reset_index()
     x[["cat0", "cat2", "cat2"]] = x[["cat0", "cat1", "cat2"]] + 1
     x = x.set_index(["cat0", "cat1", "cat2"]).iloc[:, 0]
     with pytest.raises(ValueError, match="not boolean"):
-        UpSet(x)
+        UpSetHeatmap(x)
 
 
 @pytest.mark.parametrize(
@@ -810,8 +810,8 @@ def test_filter_subsets(filter_params, expected, sort_by):
     #          False  True      623
     #   False  True   True      258
     #   True   True   True      990
-    upset_full = UpSet(data, subset_size="auto", sort_by=sort_by)
-    upset_filtered = UpSet(data, subset_size="auto", sort_by=sort_by, **filter_params)
+    upset_full = UpSetHeatmap(data, subset_size="auto", sort_by=sort_by)
+    upset_filtered = UpSetHeatmap(data, subset_size="auto", sort_by=sort_by, **filter_params)
     intersections = upset_full.intersections
     df = upset_full._df
     # check integrity of expected, just to be sure
@@ -835,10 +835,10 @@ def test_filter_subsets_max_subset_rank_tie():
     data = generate_samples(seed=0, n_samples=5, n_categories=3)
     tested_non_tie = False
     tested_tie = True
-    full = UpSet(data, subset_size="count").intersections
+    full = UpSetHeatmap(data, subset_size="count").intersections
     prev = None
     for max_rank in range(1, 5):
-        cur = UpSet(data, subset_size="count", max_subset_rank=max_rank).intersections
+        cur = UpSetHeatmap(data, subset_size="count", max_subset_rank=max_rank).intersections
         if prev is not None:
             if cur.shape[0] > prev.shape[0]:
                 # check we add rows only when they are new
@@ -867,7 +867,7 @@ def test_filter_subsets_max_subset_rank_tie():
 def test_bad_percentages(value):
     data = generate_samples(seed=0, n_samples=5, n_categories=3)
     with pytest.raises(ValueError, match="percentage"):
-        UpSet(data, min_subset_size=value)
+        UpSetHeatmap(data, min_subset_size=value)
 
 
 @pytest.mark.parametrize(
@@ -1050,7 +1050,7 @@ CAT_NOT1_2_RED_STYLES = _make_facecolor_list(
 )
 def test_style_subsets(kwarg_list, expected_subset_styles, expected_legend):
     data = generate_counts()
-    upset = UpSet(data, facecolor="blue")
+    upset = UpSetHeatmap(data, facecolor="blue")
     for kw in kwarg_list:
         upset.style_subsets(**kw)
     actual_subset_styles = upset.subset_styles
@@ -1100,7 +1100,7 @@ def test_style_subsets_artists(orientation):
     # This may be a bit overkill, and too coupled with implementation details.
     is_vertical = orientation == "vertical"
     data = generate_counts()
-    upset = UpSet(data, orientation=orientation)
+    upset = UpSetHeatmap(data, orientation=orientation)
     subset_styles = [
         {"facecolor": "black"},
         {"facecolor": "red"},
@@ -1146,7 +1146,7 @@ def test_style_subsets_artists(orientation):
 
     styled_dots = _dots_to_dataframe(upset_axes["matrix"], is_vertical)
     baseline_dots = _dots_to_dataframe(
-        UpSet(data, orientation=orientation).plot()["matrix"], is_vertical
+        UpSetHeatmap(data, orientation=orientation).plot()["matrix"], is_vertical
     )
     inactive_dot_mask = (baseline_dots[["fc_a"]] < 1).values.ravel()
     assert_frame_equal(
@@ -1208,7 +1208,7 @@ def test_style_subsets_artists(orientation):
 )
 def test_categories(kwarg_list, expected_category_styles):
     data = generate_counts()
-    upset = UpSet(data, facecolor="blue")
+    upset = UpSetHeatmap(data, facecolor="blue")
     for kw in kwarg_list:
         upset.style_categories(**kw)
     actual_category_styles = upset.category_styles
@@ -1224,4 +1224,4 @@ def test_many_categories():
     data = pd.DataFrame([index1, index2], columns=columns)
     data["value"] = 1
     data = data.set_index(columns)["value"]
-    UpSet(data)
+    UpSetHeatmap(data)

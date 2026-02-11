@@ -152,8 +152,8 @@ def _identity(obj):
     return obj
 
 
-class UpSet:
-    """Manage the data and drawing for a basic UpSet plot
+class UpSetHeatmap:
+    """Manage the data and drawing for a basic UpSetHeatmap plot
 
     Primary public method is :meth:`plot`.
 
@@ -436,7 +436,7 @@ class UpSet:
             Maximum degree of a subset to be styled.
 
         facecolor : str or matplotlib color, optional
-            Override the default UpSet facecolor for selected subsets.
+            Override the default UpSetHeatmap facecolor for selected subsets.
         edgecolor : str or matplotlib color, optional
             Set the edgecolor for bars, dots, and the line between dots.
         hatch : str, optional
@@ -1300,7 +1300,7 @@ class UpSet:
 
 
 def plot(data, fig=None, **kwargs):
-    """Make an UpSet plot of data on fig
+    """Make an UpSetHeatmap plot of data on fig
 
     Parameters
     ----------
@@ -1312,11 +1312,11 @@ def plot(data, fig=None, **kwargs):
     fig : matplotlib.figure.Figure, optional
         Defaults to a new figure.
     kwargs
-        Other arguments for :class:`UpSet`
+        Other arguments for :class:`UpSetHeatmap`
 
     Returns
     -------
     subplots : dict of matplotlib.axes.Axes
         Keys are 'matrix', 'intersections', 'totals', 'shading'
     """
-    return UpSet(data, **kwargs).plot(fig)
+    return UpSetHeatmap(data, **kwargs).plot(fig)
