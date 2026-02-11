@@ -8,8 +8,7 @@ from matplotlib import colors, patches
 from matplotlib import pyplot as plt
 
 from . import util
-# from .reformat import _get_subset_mask, query
-from .reformat import query
+from .reformat import _get_subset_mask, query
 # prevents ImportError on matplotlib versions >3.5.2
 try:
     from matplotlib.tight_layout import get_renderer
@@ -31,6 +30,8 @@ def _process_data(
     max_subset_rank=None,
     min_degree=None,
     max_degree=None,
+    sort_groups_by=None,
+    group_order=None,
     reverse=False,
     include_empty_subsets=False,
 ):
@@ -45,6 +46,8 @@ def _process_data(
         max_subset_rank=max_subset_rank,
         min_degree=min_degree,
         max_degree=max_degree,
+        sort_groups_by=sort_groups_by,
+        group_order=group_order,
         include_empty_subsets=include_empty_subsets,
     )
 
@@ -308,6 +311,10 @@ class UpSet:
         show_counts="",
         show_percentages=False,
         include_empty_subsets=False,
+        heatmap_cmap="YlOrRd",
+        heatmap_normalize=None,
+        sort_groups_by=None,
+        group_order=None,
     ):
         self._horizontal = orientation == "horizontal"
         self._reorient = _identity if self._horizontal else _transpose
@@ -341,6 +348,14 @@ class UpSet:
             self._subset_plots.pop()
         self._show_counts = show_counts
         self._show_percentages = show_percentages
+        _HEATMAP_NORMALIZE_VALUES = (None, "fraction", "zscore")
+        if heatmap_normalize not in _HEATMAP_NORMALIZE_VALUES:
+            raise ValueError(
+                f"heatmap_normalize must be one of {_HEATMAP_NORMALIZE_VALUES},"
+                f" got {repr(heatmap_normalize)}"
+            )
+        self._heatmap_cmap = heatmap_cmap
+        self._heatmap_normalize = heatmap_normalize
 
         (self.total, self._df, self.intersections, self.group_agg, self.totals, self.group_totals) = _process_data(
             data,
@@ -353,6 +368,8 @@ class UpSet:
             max_subset_rank=max_subset_rank,
             min_degree=min_degree,
             max_degree=max_degree,
+            sort_groups_by=sort_groups_by,
+            group_order=group_order,
             reverse=not self._horizontal,
             include_empty_subsets=include_empty_subsets,
         )
@@ -441,18 +458,18 @@ class UpSet:
             "linestyle": linestyle,
         }
         style = {k: v for k, v in style.items() if v is not None}
-        # mask = _get_subset_mask(
-        #     self.intersections,
-        #     present=present,
-        #     absent=absent,
-        #     min_subset_size=min_subset_size,
-        #     max_subset_size=max_subset_size,
-        #     max_subset_rank=max_subset_rank,
-        #     min_degree=min_degree,
-        #     max_degree=max_degree,
-        # )
-        # for idx in np.flatnonzero(mask):
-        #     self.subset_styles[idx].update(style)
+        mask = _get_subset_mask(
+            self.intersections,
+            present=present,
+            absent=absent,
+            min_subset_size=min_subset_size,
+            max_subset_size=max_subset_size,
+            max_subset_rank=max_subset_rank,
+            min_degree=min_degree,
+            max_degree=max_degree,
+        )
+        for idx in np.flatnonzero(mask):
+            self.subset_styles[idx].update(style)
 
         if label is not None:
             if "facecolor" not in style:
@@ -497,7 +514,7 @@ class UpSet:
             cum_y = y if cum_y is None else cum_y + y
             all_rects.extend(rects)
 
-        self._label_sizes(ax, rects, "top" if self._horizontal else "right")
+        self._label_sizes(ax, all_rects, "top" if self._horizontal else "right")
 
         ax.xaxis.set_visible(False)
         for x in ["top", "bottom", "right"]:
@@ -728,8 +745,8 @@ class UpSet:
             out = {
                 "matrix": gridspec[-n_cats:, -n_inters:],
                 "shading": gridspec[-n_cats:, :],
-                "heatmap": gridspec[-(n_cats+n_groups):-n_cats, -n_inters:],
-                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :self._totals_plot_elements],
+                "heatmap": None if n_groups == 0 else gridspec[-(n_cats+n_groups):-n_cats, -n_inters:],
+                "group_totals": None if n_groups == 0 else gridspec[-(n_cats+n_groups):-n_cats, :self._totals_plot_elements],
                 "totals":  None
                 if self._totals_plot_elements == 0
                 else gridspec[-n_cats:, : self._totals_plot_elements],
@@ -744,8 +761,8 @@ class UpSet:
             out = {
                 "matrix": gridspec[-n_inters:, :n_cats],
                 "shading": gridspec[:, :n_cats],
-                "heatmap":None,
-                "group_totals": gridspec[-(n_cats+n_groups):-n_cats, :-n_cats],
+                "heatmap": None if n_groups == 0 else gridspec[-n_inters:, n_cats:n_cats + n_groups],
+                "group_totals": None if n_groups == 0 else gridspec[: self._totals_plot_elements, n_cats:n_cats + n_groups],
                 "totals": None
                 if self._totals_plot_elements == 0
                 else gridspec[: self._totals_plot_elements, :n_cats],
@@ -755,8 +772,7 @@ class UpSet:
             for start, stop, plot in zip(
                 np.hstack([[0], cumsizes]), cumsizes, self._subset_plots
             ):
-                print(start, stop, plot["id"])
-                out[plot["id"]] = gridspec[-n_inters:, start + n_cats : stop + n_cats]
+                out[plot["id"]] = gridspec[-n_inters:, start + n_cats + n_groups : stop + n_cats + n_groups]
         return out
 
     def plot_matrix(self, ax):
@@ -798,10 +814,10 @@ class UpSet:
                 }
             )
         )
-        styles["linewidth"].fillna(1, inplace=True)
-        styles["facecolor"].fillna(self._facecolor, inplace=True)
-        styles["edgecolor"].fillna(styles["facecolor"], inplace=True)
-        styles["linestyle"].fillna("solid", inplace=True)
+        styles["linewidth"] = styles["linewidth"].fillna(1)
+        styles["facecolor"] = styles["facecolor"].fillna(self._facecolor)
+        styles["edgecolor"] = styles["edgecolor"].fillna(styles["facecolor"])
+        styles["linestyle"] = styles["linestyle"].fillna("solid")
         del styles["hatch"]  # not supported in matrix (currently)
 
         x = np.repeat(np.arange(len(data)), n_cats)
@@ -921,7 +937,7 @@ class UpSet:
             for rect in rects:
                 width = rect.get_width() + rect.get_x()
                 ax.text(
-                    width + margin,
+                    width - margin,
                     rect.get_y() + rect.get_height() * 0.5,
                     fmt.format(*make_args(width)),
                     ha="right",
@@ -989,21 +1005,22 @@ class UpSet:
         self._label_sizes(ax, rects, "left" if self._horizontal else "top")
 
         for category, rect in zip(self.group_totals.index.values, rects):
-                style = {
-                    k[len("bar_") :]: v
+            style = {
+                k[len("bar_") :]: v
                 for k, v in self.category_styles.get(category, {}).items()
                 if k.startswith("bar_")
             }
-        style.setdefault("edgecolor", style.get("facecolor", self._facecolor))
-        for attr, val in style.items():
-            getattr(rect, "set_" + attr)(val)
+            style.setdefault("edgecolor", style.get("facecolor", self._facecolor))
+            for attr, val in style.items():
+                getattr(rect, "set_" + attr)(val)
 
         max_total = self.group_totals.max()
         if self._horizontal:
             orig_ax.set_xlim(max_total, 0)
 
-        ax.xaxis.set_ticks_position("top")
-        ax.xaxis.set_label_position("top")
+        if self._horizontal:
+            ax.xaxis.set_ticks_position("top")
+            ax.xaxis.set_label_position("top")
         for x in ["bottom", "left", "right"]:
             ax.spines[self._reorient(x)].set_visible(False)
         ax.yaxis.set_visible(False)
@@ -1152,9 +1169,7 @@ class UpSet:
         if specs.get("group_totals") is None:
             group_totals_ax = None
         else:
-            group_totals_ax = self._reorient(fig.add_subplot)(
-                specs["group_totals"], sharey=matrix_ax
-            )
+            group_totals_ax = fig.add_subplot(specs["group_totals"])
             self.plot_group_totals(group_totals_ax)
 
 
@@ -1192,21 +1207,68 @@ class UpSet:
             heatmap_data = group_agg_reordered.unstack(fill_value=0).T
             # Ensure columns match the plot order
             heatmap_data = heatmap_data.reindex(columns=self.intersections.index, fill_value=0)
-            print(32*'#')
-            print(heatmap_data.columns)
-            print(32*'#')
 
-            # The x-axis order is defined by self.intersections.index (aligned above)
-            im = heatmap_ax.imshow(heatmap_data.values, cmap='YlOrRd', aspect='auto')
-            # fig.colorbar(im, ax=heatmap_ax, label='Value')
-            heatmap_ax.set_yticks(np.arange(len(heatmap_data.index)))
-            heatmap_ax.set_yticklabels(heatmap_data.index)
-            heatmap_ax.set_xticks([])
+            # Apply per-intersection normalisation
+            if self._heatmap_normalize == "fraction":
+                col_sums = heatmap_data.sum(axis=0)
+                col_sums = col_sums.replace(0, np.nan)
+                heatmap_data = heatmap_data.div(col_sums, axis=1)
+                cbar_label = "Fraction"
+                imshow_kw = {"vmin": 0, "vmax": 1}
+            elif self._heatmap_normalize == "zscore":
+                col_mean = heatmap_data.mean(axis=0)
+                col_std = heatmap_data.std(axis=0).replace(0, np.nan)
+                heatmap_data = (heatmap_data - col_mean) / col_std
+                heatmap_data = heatmap_data.fillna(0)
+                cbar_label = "Z-score"
+                abs_max = np.nanmax(np.abs(heatmap_data.values))
+                imshow_kw = {"vmin": -abs_max, "vmax": abs_max}
+            else:
+                cbar_label = "Count"
+                imshow_kw = {}
+
+            n_groups_val = len(heatmap_data.index)
+            n_inters_val = len(heatmap_data.columns)
+
+            if self._horizontal:
+                # Rows = groups (y-axis), columns = intersections (x-axis, shared with matrix)
+                im = heatmap_ax.imshow(
+                    heatmap_data.values,
+                    cmap=self._heatmap_cmap,
+                    aspect='auto',
+                    **imshow_kw,
+                )
+                heatmap_ax.set_yticks(np.arange(n_groups_val))
+                heatmap_ax.set_yticklabels(heatmap_data.index)
+                heatmap_ax.set_xticks([])
+            else:
+                # Rows = intersections (y-axis, shared with matrix), columns = groups (x-axis)
+                # Transpose data so shape is (n_inters, n_groups).
+                # origin='upper' + explicit extent aligns row 0 (first intersection)
+                # with ymax, matching the matrix where _bin=n_inters-1 is at the top.
+                im = heatmap_ax.imshow(
+                    heatmap_data.values.T,
+                    cmap=self._heatmap_cmap,
+                    aspect='auto',
+                    origin='upper',
+                    extent=[-0.5, n_groups_val - 0.5, -0.5, n_inters_val - 0.5],
+                    **imshow_kw,
+                )
+                heatmap_ax.set_xticks(np.arange(n_groups_val))
+                heatmap_ax.set_xticklabels(heatmap_data.index, rotation=45, ha='right')
+                heatmap_ax.set_yticks([])
+
             heatmap_ax.grid(False)
             for spine in heatmap_ax.spines.values():
                 spine.set_visible(False)
-        else:
-            raise RuntimeError("Unable to generate the heatmap: group_agg is None or empty")
+
+            # Colorbar: placed just outside the right edge of the heatmap axes
+            # using inset_axes coordinates so it does not affect heatmap alignment
+            cbar_ax = heatmap_ax.inset_axes([1.02, 0, 0.04, 1])
+            cbar = fig.colorbar(im, cax=cbar_ax)
+            cbar.ax.tick_params(labelsize=matplotlib.rcParams["xtick.labelsize"])
+            cbar.set_label(cbar_label, size=matplotlib.rcParams["xtick.labelsize"])
+        # else: no heatmap — heatmap_ax remains None, which is fine
         # df = self._df.reset_index()
         
 

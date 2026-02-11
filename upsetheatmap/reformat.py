@@ -23,6 +23,12 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
             f" Got {repr(subset_size)}"
         )
     
+    if not isinstance(df, pd.DataFrame) or 'group' not in df.columns:
+        raise ValueError(
+            "Input must be a DataFrame with a 'group' column. "
+            "Use generate_samples() to create compatible data."
+        )
+
     if sum_over is False:
         raise ValueError("Unsupported value for sum_over: False")
     elif subset_size == "auto" and sum_over is None:
@@ -45,7 +51,8 @@ def _aggregate_data(df: pd.DataFrame, subset_size: str, sum_over: str | bool | N
     # Group_by for the aggregation in each individual group
     df_byGroup = df.copy()
     df_byGroup.index = pd.MultiIndex.from_frame(df_byGroup.index.to_frame().reset_index(drop=True).assign(group=df_byGroup['group'].values))
-    df_byGroup = df_byGroup.drop(['group', 'index'], axis=1)
+    cols_to_drop = [c for c in ['group', 'index'] if c in df_byGroup.columns]
+    df_byGroup = df_byGroup.drop(cols_to_drop, axis=1)
     gb_byGroup = df_byGroup.groupby(level=list(range(df_byGroup.index.nlevels)), sort=False)
     if sum_over is False:
         aggregated = gb.size()
@@ -72,13 +79,9 @@ def _check_index(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy(deep=False)
     kw = {
         "levels": [x.astype(bool) for x in df.index.levels],
+        "codes": df.index.codes,
         "names": df.index.names,
     }
-    if hasattr(df.index, "codes"):
-        # compat for pandas <= 0.20
-        kw["codes"] = df.index.codes
-    else:
-        kw["labels"] = df.index.labels
     df.index = pd.MultiIndex(**kw)
     return df
 
@@ -146,6 +149,49 @@ class QueryResult:
                 level=list(range(len(categories))), sort=False
             )
         }
+
+
+def _get_subset_mask(
+    intersections: pd.Series,
+    present=None,
+    absent=None,
+    min_subset_size=None,
+    max_subset_size=None,
+    max_subset_rank=None,
+    min_degree=None,
+    max_degree=None,
+) -> np.ndarray:
+    """Return a boolean mask over intersections matching the given filters."""
+    mask = np.ones(len(intersections), dtype=bool)
+
+    if present is not None:
+        for cat in _scalar_to_list(present):
+            mask &= intersections.index.get_level_values(cat).values.astype(bool)
+
+    if absent is not None:
+        for cat in _scalar_to_list(absent):
+            mask &= ~intersections.index.get_level_values(cat).values.astype(bool)
+
+    if min_degree is not None or max_degree is not None:
+        degrees = np.array([sum(tup) for tup in intersections.index])
+        if min_degree is not None:
+            mask &= degrees >= min_degree
+        if max_degree is not None:
+            mask &= degrees <= max_degree
+
+    if min_subset_size is not None:
+        min_subset_size = _check_percent(min_subset_size, intersections)
+        mask &= intersections.values >= min_subset_size
+
+    if max_subset_size is not None:
+        max_subset_size = _check_percent(max_subset_size, intersections)
+        mask &= intersections.values <= max_subset_size
+
+    if max_subset_rank is not None:
+        ranks = intersections.rank(ascending=False, method="min")
+        mask &= ranks.values <= max_subset_rank
+
+    return mask
 
 
 def query(
@@ -306,7 +352,7 @@ def query(
         for name in agg.index.names
     ]
     category_totals = pd.Series(category_totals, index=agg.index.names)
-    group_totals = data.groupby('group')['value'].sum()
+    group_totals = group_sizes  # already computed correctly for count vs sum mode
     
     if include_empty_subsets:
         nlevels = len(agg.index.levels)
@@ -328,10 +374,14 @@ def query(
     # Add sorting of the groups
     if sort_groups_by == "count":
         group_order = group_sizes.sort_values(ascending=False).index.tolist()
-    elif sort_groups_by == "custom":
-        if not set(group_order) == set(group_sizes.index.tolist()):
-            raise ValueError(f"group_order must be list containing all the group names: {group_sizes.index.tolist()}")
-    elif group_order == None:
+    elif sort_groups_by == "custom" or group_order is not None:
+        if group_order is None:
+            raise ValueError("group_order must be provided when sort_groups_by='custom'")
+        if set(group_order) != set(group_sizes.index.tolist()):
+            raise ValueError(
+                f"group_order must contain all group names: {group_sizes.index.tolist()}"
+            )
+    elif sort_groups_by is None:
         group_order = group_sizes.index.tolist()
     else:
         raise ValueError("sort_groups_by must be one of {'count', 'custom', None}")
@@ -369,15 +419,19 @@ def query(
     else:
         raise ValueError("Unknown sort_by: %r" % sort_by)
 
-    # Implement group_agg reorder to fit the index orders of agg and group_totals
+    # Reorder group_agg category levels to match the sorted category order so
+    # that combined_index tuples (built from sorted agg.index) align positionally.
+    sorted_cat_names = list(category_totals.index.values)
+    group_agg = group_agg.reorder_levels(sorted_cat_names + ['group'])
+
     combined_index = []
     for g in group_order:
         for idx in agg.index:
             combined_index.append(idx+(g,))
-    combined_index
 
     group_agg = group_agg.reindex(pd.MultiIndex.from_tuples(combined_index, names=group_agg.index.names))
     group_agg = group_agg.fillna(0)
+    group_totals = group_totals.reindex(group_order)
 
     return QueryResult(
         data=data,
