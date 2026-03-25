@@ -1223,6 +1223,8 @@ class UpSetHeatmap:
             heatmap_data = group_agg_reordered.unstack(fill_value=0).T
             # Ensure columns match the plot order
             heatmap_data = heatmap_data.reindex(columns=self.intersections.index, fill_value=0)
+            # Ensure rows (groups) match the custom group order
+            heatmap_data = heatmap_data.reindex(self.group_totals.index)
 
             # Apply per-intersection normalisation
             if self._heatmap_normalize == "fraction":
