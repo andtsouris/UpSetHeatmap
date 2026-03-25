@@ -283,6 +283,10 @@ class UpSetHeatmap:
     include_empty_subsets : bool (default=False)
         If True, all possible category combinations will be shown as subsets,
         even when some are not present in data.
+    font_size : float or None, optional
+        Font size for all text in the plot: category/group labels, axis tick
+        labels, bar count/percentage annotations, and the colour scale label
+        and ticks. Defaults to ``matplotlib.rcParams["xtick.labelsize"]``.
     """
 
     _default_figsize = (10, 6)
@@ -315,9 +319,15 @@ class UpSetHeatmap:
         heatmap_normalize=None,
         sort_groups_by=None,
         group_order=None,
+        font_size=None,
     ):
         self._horizontal = orientation == "horizontal"
         self._reorient = _identity if self._horizontal else _transpose
+        self._font_size = (
+            font_size
+            if font_size is not None
+            else matplotlib.rcParams["xtick.labelsize"]
+        )
         if facecolor == "auto":
             bgcolor = matplotlib.rcParams.get("axes.facecolor", "white")
             r, g, b, a = colors.to_rgba(bgcolor)
@@ -522,7 +532,8 @@ class UpSetHeatmap:
 
         tick_axis = ax.yaxis
         tick_axis.grid(True)
-        ax.set_ylabel(title)
+        ax.tick_params(axis="y", labelsize=self._font_size)
+        ax.set_ylabel(title, fontsize=self._font_size)
         return all_rects
 
     def _plot_stacked_bars(self, ax, by, sum_over, colors, title):
@@ -695,7 +706,7 @@ class UpSetHeatmap:
             fig = plt.gcf()
 
         # Determine text size to determine figure size / spacing
-        text_kw = {"size": matplotlib.rcParams["xtick.labelsize"]}
+        text_kw = {"size": self._font_size}
         # adding "x" ensures a margin
         t = fig.text(
             0,
@@ -864,10 +875,12 @@ class UpSetHeatmap:
         tick_axis = ax.yaxis
         tick_axis.set_ticks(np.arange(n_cats))
         tick_axis.set_ticklabels(
-            data.index.names, rotation=0 if self._horizontal else -90
+            data.index.names,
+            rotation=0 if self._horizontal else -90,
+            fontsize=self._font_size,
         )
         ax.xaxis.set_visible(False)
-        ax.tick_params(axis="both", which="both", length=0)
+        ax.tick_params(axis="both", which="both", length=0, labelsize=self._font_size)
         if not self._horizontal:
             ax.yaxis.set_ticks_position("top")
         ax.set_frame_on(False)
@@ -931,6 +944,7 @@ class UpSetHeatmap:
                     fmt.format(*make_args(width)),
                     ha="left",
                     va="center",
+                    size=self._font_size,
                 )
         elif where == "left":
             margin = 0.01 * abs(np.diff(ax.get_xlim()))
@@ -942,6 +956,7 @@ class UpSetHeatmap:
                     fmt.format(*make_args(width)),
                     ha="right",
                     va="center",
+                    size=self._font_size,
                 )
         elif where == "top":
             margin = 0.01 * abs(np.diff(ax.get_ylim()))
@@ -953,6 +968,7 @@ class UpSetHeatmap:
                     fmt.format(*make_args(height)),
                     ha="center",
                     va="bottom",
+                    size=self._font_size,
                 )
         else:
             raise NotImplementedError("unhandled where: %r" % where)
@@ -1176,7 +1192,7 @@ class UpSetHeatmap:
 
         out = {"matrix": matrix_ax, "shading": shading_ax, "totals": totals_ax, "group_totals": group_totals_ax}
         for plot in self._subset_plots:
-            print(plot["id"])
+            # print(plot["id"])
             ax = self._reorient(fig.add_subplot)(specs[plot["id"]], sharex=matrix_ax)
             if plot["type"] == "default":
                 self.plot_intersections(ax)
@@ -1241,7 +1257,7 @@ class UpSetHeatmap:
                     **imshow_kw,
                 )
                 heatmap_ax.set_yticks(np.arange(n_groups_val))
-                heatmap_ax.set_yticklabels(heatmap_data.index)
+                heatmap_ax.set_yticklabels(heatmap_data.index, fontsize=self._font_size)
                 heatmap_ax.set_xticks([])
             else:
                 # Rows = intersections (y-axis, shared with matrix), columns = groups (x-axis)
@@ -1257,19 +1273,27 @@ class UpSetHeatmap:
                     **imshow_kw,
                 )
                 heatmap_ax.set_xticks(np.arange(n_groups_val))
-                heatmap_ax.set_xticklabels(heatmap_data.index, rotation=45, ha='right')
+                heatmap_ax.xaxis.set_ticks_position('top')
+                heatmap_ax.xaxis.set_label_position('top')
+                heatmap_ax.set_xticklabels(heatmap_data.index, rotation=-90, ha='center', fontsize=self._font_size)
                 heatmap_ax.set_yticks([])
 
             heatmap_ax.grid(False)
             for spine in heatmap_ax.spines.values():
                 spine.set_visible(False)
 
-            # Colorbar: placed just outside the right edge of the heatmap axes
-            # using inset_axes coordinates so it does not affect heatmap alignment
-            cbar_ax = heatmap_ax.inset_axes([1.02, 0, 0.04, 1])
+            # Colorbar placement: horizontal → right of heatmap (full height, narrow);
+            # vertical → far right of figure (right of intersection size bars),
+            # centred and compact to match the horizontal appearance.
+            if self._horizontal:
+                cbar_anchor_ax = heatmap_ax
+                cbar_ax = cbar_anchor_ax.inset_axes([1.02, 0, 0.04, 1])
+            else:
+                cbar_anchor_ax = out.get("intersections", heatmap_ax)
+                cbar_ax = cbar_anchor_ax.inset_axes([1.02, 0.35, 0.08, 0.3])
             cbar = fig.colorbar(im, cax=cbar_ax)
-            cbar.ax.tick_params(labelsize=matplotlib.rcParams["xtick.labelsize"])
-            cbar.set_label(cbar_label, size=matplotlib.rcParams["xtick.labelsize"])
+            cbar.ax.tick_params(labelsize=self._font_size)
+            cbar.set_label(cbar_label, size=self._font_size)
         # else: no heatmap — heatmap_ax remains None, which is fine
         # df = self._df.reset_index()
         
